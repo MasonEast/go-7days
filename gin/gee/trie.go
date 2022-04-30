@@ -1,17 +1,22 @@
+/*
+ * @Description:
+ * @Date: 2022-04-30 10:20:55
+ * @Author: mason
+ */
 package gee
 
 import "strings"
 
 // 前缀树节点
 type node struct {
-	pattern string	// 待匹配路由
-	part string 		// 路由中的一部分
-	children []*node	// 子节点
-	isWild bool			// 是否精确匹配
+	pattern  string  // 待匹配路由
+	part     string  // 路由中的一部分
+	children []*node // 子节点
+	isWild   bool    // 是否精确匹配
 }
 
 // 第一个匹配成功的节点，用于插入
-func (n *node) matchChild(part  string) *node {
+func (n *node) matchChild(part string) *node {
 	for _, child := range n.children {
 		if child.part == part || child.isWild {
 			return child
@@ -42,12 +47,12 @@ func (n *node) insert(pattern string, parts []string, height int) {
 	child := n.matchChild(part)
 	if child == nil {
 		child = &node{
-			part: part,
+			part:   part,
 			isWild: part[0] == ':' || part[0] == '*',
 		}
 		n.children = append(n.children, child)
 	}
-	child.insert(pattern, parts, height + 1)
+	child.insert(pattern, parts, height+1)
 }
 
 func (n *node) search(parts []string, height int) *node {
@@ -62,7 +67,7 @@ func (n *node) search(parts []string, height int) *node {
 	children := n.matchChildren(part)
 
 	for _, child := range children {
-		result := child.search(parts, height + 1)
+		result := child.search(parts, height+1)
 		if result != nil {
 			return result
 		}

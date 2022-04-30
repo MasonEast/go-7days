@@ -1,3 +1,8 @@
+/*
+ * @Description:
+ * @Date: 2022-04-30 10:20:55
+ * @Author: mason
+ */
 package gee
 
 /*
@@ -17,33 +22,65 @@ package gee
 		就将该子节点标记为非精确匹配；
 	- 当收到请求后，根据根路径去匹配，通过递归一层层匹配，如果请求路径中有:或者*，就可以匹配到之前标记为非精确匹配的子节点；
 
+8. 添加路由分组：通过路由分组我们可以共用路由前缀，还可以对分组使用特有的中间件；
+	- 增加RouterGroup；
+	- RouterGroup需要访问路由，我们可以在Group中保存一个Engine的指针；
+	- Engine作为顶层分组，保存RouterGroup的指针，拥有RouterGroup所有能力；
+	- 这样我们就可以将所有的路由相关函数交给RouterGroup处理；
+
+
 */
 import (
+	"log"
 	"net/http"
 )
 
 type HandlerFunc func(*Context)
 
 type Engine struct {
+	*RouterGroup
 	router *router
+	groups []*RouterGroup
+}
+
+type RouterGroup struct {
+	prefix      string
+	middlewares []HandlerFunc
+	parent      *RouterGroup
+	engine      *Engine
 }
 
 func New() *Engine {
-	return &Engine{
-		router: newRouter(),
+	engine := &Engine{router: newRouter()}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+// 添加路由分组
+func (group *RouterGroup) Group(prefix string) *RouterGroup {
+	engine := group.engine
+	newGroup := &RouterGroup{
+		prefix: group.prefix + prefix,
+		parent: group,
+		engine: engine,
 	}
+	engine.groups = append(engine.groups, newGroup)
+	return newGroup
 }
 
-func (e *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	e.router.addRoute(method, pattern, handler)
+func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
+	pattern := group.prefix + comp
+	log.Printf("Route %4s - %s", method, pattern)
+	group.engine.router.addRoute(method, pattern, handler)
 }
 
-func (e *Engine) GET(pattern string, handler HandlerFunc) {
-	e.addRoute("GET", pattern, handler)
+func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
+	group.addRoute("GET", pattern, handler)
 }
 
-func (e *Engine) POST(pattern string, handler HandlerFunc) {
-	e.addRoute("POST", pattern, handler)
+func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
+	group.addRoute("POST", pattern, handler)
 }
 
 func (e *Engine) Run(addr string) (err error) {

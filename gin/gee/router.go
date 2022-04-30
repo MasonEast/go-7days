@@ -1,3 +1,8 @@
+/*
+ * @Description:
+ * @Date: 2022-04-30 10:20:55
+ * @Author: mason
+ */
 package gee
 
 import (
@@ -10,13 +15,13 @@ import (
 // roots存储每种请求的前缀树的根节点
 type router struct {
 	handlers map[string]HandlerFunc
-	roots map[string]*node
+	roots    map[string]*node
 }
 
 func newRouter() *router {
 	return &router{
 		handlers: make(map[string]HandlerFunc),
-		roots: make(map[string]*node),
+		roots:    make(map[string]*node),
 	}
 }
 
