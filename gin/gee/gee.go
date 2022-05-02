@@ -30,12 +30,20 @@ package gee
 
 9. 使用中间件：中间件允许用户在handler中做一些自定义操作，并且可以改变Context；
 	- 通过next方法支持使用多个中间件链式调用；
-	- 中间件应该保存在Context中，因为中间件要支持在用户handler执行后依然可以调用；
+	- 中间件和请求处理handler应该保存在Context中，因为中间件要支持在用户handler执行前后都可以调用；
 	- 当我们接收到一个具体请求时，要判断该请求适用于哪些中间件，在这里简单通过 URL 的前缀来判断
+
+10. 使用html模板：
+	- 通过用户请求映射到服务器静态资源；
+	- 通过net/http的http.FileServer返回静态资源；
+
+11. 错误恢复：
 */
 import (
+	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -45,6 +53,9 @@ type Engine struct {
 	*RouterGroup
 	router *router
 	groups []*RouterGroup
+
+	htmlTemplates *template.Template // for html render
+	funcMap       template.FuncMap   // for html render
 }
 
 type RouterGroup struct {
@@ -87,12 +98,35 @@ func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	group.addRoute("POST", pattern, handler)
 }
 
-func (e *Engine) Run(addr string) (err error) {
-	return http.ListenAndServe(addr, e)
-}
-
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
 	group.middlewares = append(group.middlewares, middlewares...)
+}
+
+func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	absolutePath := path.Join(group.prefix, relativePath)
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(c *Context) {
+		file := c.Param("filepath")
+		// Check if file exists and/or if we have permission to access it
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		fileServer.ServeHTTP(c.Writer, c.Req)
+	}
+}
+
+// 将服务器磁盘上的静态文件映射到用户路由上
+func (group *RouterGroup) Static(relativePath string, root string) {
+	handler := group.createStaticHandler(relativePath, http.Dir(root))
+	urlPattern := path.Join(relativePath, "/*filepath")
+
+	group.GET(urlPattern, handler)
+}
+
+func (e *Engine) Run(addr string) (err error) {
+	return http.ListenAndServe(addr, e)
 }
 
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -104,5 +138,16 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	c := newContext(w, req)
 	c.handlers = middlewares
+	c.engine = engine
 	engine.router.handle(c)
+}
+
+// 设置自定义渲染函数
+func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
+	engine.funcMap = funcMap
+}
+
+// 加载模板
+func (engine *Engine) LoadHTMLGlob(pattern string) {
+	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
 }
