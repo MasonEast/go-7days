@@ -37,7 +37,7 @@ package gee
 	- 通过用户请求映射到服务器静态资源；
 	- 通过net/http的http.FileServer返回静态资源；
 
-11. 错误恢复：
+11. 错误恢复：通过中间件的形式使用go的recover()
 */
 import (
 	"html/template"
@@ -150,4 +150,10 @@ func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
 // 加载模板
 func (engine *Engine) LoadHTMLGlob(pattern string) {
 	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
+}
+
+func Default() *Engine {
+	engine := New()
+	engine.Use(Logger(), Recovery())
+	return engine
 }
