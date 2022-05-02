@@ -28,11 +28,15 @@ package gee
 	- Engine作为顶层分组，保存RouterGroup的指针，拥有RouterGroup所有能力；
 	- 这样我们就可以将所有的路由相关函数交给RouterGroup处理；
 
-
+9. 使用中间件：中间件允许用户在handler中做一些自定义操作，并且可以改变Context；
+	- 通过next方法支持使用多个中间件链式调用；
+	- 中间件应该保存在Context中，因为中间件要支持在用户handler执行后依然可以调用；
+	- 当我们接收到一个具体请求时，要判断该请求适用于哪些中间件，在这里简单通过 URL 的前缀来判断
 */
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 type HandlerFunc func(*Context)
@@ -87,7 +91,18 @@ func (e *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, e)
 }
 
-func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
+}
+
+func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var middlewares []HandlerFunc
+	for _, group := range engine.groups {
+		if strings.HasPrefix(req.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	c := newContext(w, req)
-	e.router.handle(c)
+	c.handlers = middlewares
+	engine.router.handle(c)
 }
