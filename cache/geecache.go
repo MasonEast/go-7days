@@ -11,8 +11,15 @@ package cache
                             |-----> 调用`回调函数`，获取值并添加到缓存 --> 返回缓存值 ⑶
 
 
+
+缓存雪崩：缓存在同一时刻全部失效，造成瞬时DB请求量大、压力骤增，引起雪崩。缓存雪崩通常因为缓存服务器宕机、缓存的 key 设置了相同的过期时间等引起。
+
+缓存击穿：一个存在的key，在缓存过期的一刻，同时有大量的请求，这些请求都会击穿到 DB ，造成瞬时DB请求量大、压力骤增。
+
+缓存穿透：查询一个不存在的数据，因为不存在则不会写到缓存中，所以每次都会去请求 DB，如果瞬间流量过大，穿透到 DB，导致宕机。
 */
 import (
+	"cache/singleflight"
 	"fmt"
 	"log"
 	"sync"
@@ -36,6 +43,8 @@ type Group struct {
 	mainCache cache
 
 	peers PeerPicker
+
+	loader *singleflight.Group
 }
 
 var (
@@ -57,6 +66,8 @@ func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
 		mainCache: cache{
 			cacheBytes: cacheBytes,
 		},
+
+		loader: &singleflight.Group{},
 	}
 
 	// 将group存储到全局变量groups中
@@ -94,18 +105,27 @@ func (g *Group) RegisterPeers(peers PeerPicker) {
 }
 
 func (g *Group) load(key string) (value ByteView, err error) {
-	// 使用 PickPeer() 方法选择节点，若非本机节点，则调用 getFromPeer() 从远程获取
-	if g.peers != nil {
-		if peer, ok := g.peers.PickPeer(key); ok {
-			if value, err = g.getFromPeer(peer, key); err == nil {
-				return value, nil
-			}
-			log.Println("[GeeCache] Failed to get from peer", err)
-		}
-	}
 
-	// 若是本机节点或失败，则回退到 getLocally()
-	return g.getLocally(key)
+	// 确保了并发场景下针对相同的 key，load 过程只会调用一次
+	viewi, err := g.loader.Do(key, func() (interface{}, error) {
+		// 使用 PickPeer() 方法选择节点，若非本机节点，则调用 getFromPeer() 从远程获取
+		if g.peers != nil {
+			if peer, ok := g.peers.PickPeer(key); ok {
+				if value, err = g.getFromPeer(peer, key); err == nil {
+					return value, nil
+				}
+				log.Println("[GeeCache] Failed to get from peer", err)
+			}
+		}
+
+    // 若是本机节点或失败，则回退到 getLocally()
+		return g.getLocally(key)
+	})
+
+	if err == nil {
+		return viewi.(ByteView), nil
+	}
+	return	
 }
 
 // 使用实现了 PeerGetter 接口的 httpGetter 从访问远程节点，获取缓存值
