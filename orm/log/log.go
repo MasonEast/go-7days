@@ -29,7 +29,7 @@ const (
 	Disabled
 )
 
-// SetLevel controls log level
+// 设置日志leve，level高时，低level的将不打印
 func SetLevel(level int) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -38,6 +38,7 @@ func SetLevel(level int) {
 		logger.SetOutput(os.Stdout)
 	}
 
+	// 设置writer为ioutil.Discard即不打印
 	if ErrorLevel < level {
 		errorLog.SetOutput(ioutil.Discard)
 	}

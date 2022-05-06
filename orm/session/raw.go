@@ -1,5 +1,9 @@
 package session
 
+/*
+数据库sql和go之间的交互处理器
+*/
+
 import (
 	"database/sql"
 	"orm/dialect"
@@ -7,15 +11,19 @@ import (
 	"strings"
 
 	"orm/schema"
+
+	"orm/clause"
 )
 
 type Session struct {
-	db      *sql.DB
-	sql     strings.Builder
-	sqlVars []interface{}
+	db      *sql.DB			// sql.open()返回的db指针
+	sql     strings.Builder	// sql语句
+	sqlVars []interface{}	// sql语句占位符对应的值
 
 	dialect dialect.Dialect
 	refTable *schema.Schema
+
+	clause clause.Clause
 }
 
 func New(db *sql.DB, dialect dialect.Dialect) *Session {
@@ -28,6 +36,7 @@ func New(db *sql.DB, dialect dialect.Dialect) *Session {
 func (s *Session) Clear() {
 	s.sql.Reset()
 	s.sqlVars = nil
+	s.clause = clause.Clause{}
 }
 
 func (s *Session) DB() *sql.DB {
