@@ -11,8 +11,9 @@ orm思路：
 		- 字段名和字段类型 —— 成员变量和类型。
 		- 额外的约束条件(例如非空、主键等) —— 成员变量的Tag
 6. 通过reflect包将任意的对象解析为Schema实例；
-7. 为复杂sql语句构建生成器clause
-8. 
+7. 为复杂sql语句构建生成器clause；
+8. 提供钩子支持在数据库操作时做一些用户自定义化的操作；
+9. 增加sql.Tx支持事务；
 */
 import (
 	"database/sql"
@@ -63,4 +64,26 @@ func (engine *Engine) Close() {
 // 支持通过engine实例创建会话
 func (engine *Engine) NewSession() *session.Session {
 	return session.New(engine.db, engine.dialect)
+}
+
+type TxFunc func(*session.Session) (interface{}, error)
+
+// Transaction executes sql wrapped in a transaction, then automatically commit if no error occurs
+func (engine *Engine) Transaction(f TxFunc) (result interface{}, err error) {
+	s := engine.NewSession()
+	if err := s.Begin(); err != nil {
+		return nil, err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = s.Rollback()
+			panic(p) // re-throw panic after Rollback
+		} else if err != nil {
+			_ = s.Rollback() // err is non-nil; don't change it
+		} else {
+			err = s.Commit() // err is nil; if Commit returns error update err
+		}
+	}()
+
+	return f(s)
 }
