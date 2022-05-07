@@ -1,7 +1,7 @@
 package clause
 
 /*
-构造sql语句
+构造sql语句的生成器
 */
 
 import "strings"
@@ -19,6 +19,10 @@ const (
 	LIMIT
 	WHERE
 	ORDERBY
+
+	UPDATE
+	DELETE
+	COUNT
 )
 
 // 根据Type调用对应的generator生成子句
