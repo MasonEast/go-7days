@@ -15,6 +15,8 @@ func (s *Session) Insert(values ...interface{}) (int64, error) {
 
 	// 多次调用 clause.Set() 构造好每一个子句
 	for _, value := range values {
+		s.CallMethod(BeforeInsert, value)
+
 		table := s.Model(value).RefTable()
 		s.clause.Set(clause.INSERT, table.Name, table.FieldNames)
 		recordValues = append(recordValues, table.RecordValues(value))
@@ -24,11 +26,12 @@ func (s *Session) Insert(values ...interface{}) (int64, error) {
 	// 调用一次 clause.Build() 按照传入的顺序构造出最终的 SQL 语句
 	sql, vars := s.clause.Build(clause.INSERT, clause.VALUES)
 
+
 	result, err := s.Raw(sql, vars...).Exec()
 	if err != nil {
 		return 0, err
 	}
-
+	s.CallMethod(AfterInsert, nil)
 	return result.RowsAffected()
 }
 
@@ -46,6 +49,10 @@ func (s *Session) Find(values interface{}) error {
 
 	for rows.Next() {
 		dest := reflect.New(destType).Elem()
+
+		// 给find方法注册afterQuery钩子
+		s.CallMethod(AfterQuery, dest.Addr().Interface())
+
 		var values []interface{}
 		for _, name := range table.FieldNames {
 			values = append(values, dest.FieldByName(name).Addr().Interface())
