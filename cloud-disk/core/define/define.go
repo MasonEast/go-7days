@@ -12,7 +12,7 @@ type UserClaim struct {
 }
 
 var JwtKey = "cloud-disk-key"
-var MailPassword = os.Getenv("MailPassword")
+var EmailPassword = os.Getenv("emailPassword")
 
 // CodeLength 验证码长度
 var CodeLength = 6
