@@ -1,0 +1,15 @@
+service core-api {
+	// 用户登录
+	@handler UserLogin
+	post /login(LoginRequest) returns (LoginReply)
+}
+
+type LoginRequest {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginReply {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
