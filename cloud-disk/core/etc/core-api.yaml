@@ -4,3 +4,6 @@ Port: 8888
 
 Mysql:
   DataSource: root:Ljf941118@tcp(127.0.0.1:3306)/cloud-disk?charset=utf8&parseTime=True&loc=Local
+
+Redis:
+  Addr: localhost:6379
