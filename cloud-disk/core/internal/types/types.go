@@ -10,3 +10,12 @@ type LoginReply struct {
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
+
+type UserDetailRequest struct {
+	Id int `json:"id"`
+}
+
+type UserDetailReply struct {
+	UserName string `json:"username"`
+	Email    string `json:"email"`
+}
