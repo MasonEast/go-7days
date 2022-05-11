@@ -1,8 +1,9 @@
 package define
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"os"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type UserClaim struct {
@@ -12,7 +13,7 @@ type UserClaim struct {
 }
 
 var JwtKey = "cloud-disk-key"
-var EmailPassword = os.Getenv("emailPassword")
+var EmailPassword = os.Getenv("password163")
 
 // CodeLength 验证码长度
 var CodeLength = 6
@@ -20,9 +21,9 @@ var CodeLength = 6
 // CodeExpire 验证码过期时间（s）
 var CodeExpire = 300
 
-// TencentSecretKey 腾讯云对象存储
-var TencentSecretKey = os.Getenv("TencentSecretKey")
-var TencentSecretID = os.Getenv("TencentSecretID")
+// cosSecretKey 腾讯云对象存储
+var CosSecretKey = os.Getenv("cosSecretKey")
+var CosSecretID = os.Getenv("cosSecretId")
 var CosBucket = "https://getcharzp-1256268070.cos.ap-chengdu.myqcloud.com"
 
 // PageSize 分页的默认参数

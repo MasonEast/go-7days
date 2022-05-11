@@ -1,6 +1,7 @@
 package test
 
 import (
+	"cloud-disk/core/define"
 	"net/smtp"
 	"testing"
 
@@ -15,7 +16,7 @@ func TestEmail(t *testing.T) {
 
 	e.Subject = "Awesome Subject"
 	e.HTML = []byte("<h1>Fancy HTML is supported, too!</h1>")
-	err := e.Send("smtp.163.com:25", smtp.PlainAuth("", "sh941118@163.com", "VSCYFUSEUZXKMYMQ", "smtp.163.com"))
+	err := e.Send("smtp.163.com:25", smtp.PlainAuth("", "sh941118@163.com", define.EmailPassword, "smtp.163.com"))
 	if err != nil {
 		t.Fatal(err)
 	}
