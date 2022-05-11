@@ -38,3 +38,17 @@ type UserRegisterRequest struct {
 type UserRegisterReply struct {
 	Message string `json:"message"`
 }
+
+type FileUploadRequest struct {
+	Hash string `json:"hash,optional"`
+	Name string `json:"name,optional"`
+	Ext  string `json:"ext,optional"`
+	Size int64  `json:"size,optional"`
+	Path string `json:"path,optional"`
+}
+
+type FileUploadReply struct {
+	Identity string `json:"identity"`
+	Ext      string `json:"ext"`
+	Name     string `json:"name"`
+}

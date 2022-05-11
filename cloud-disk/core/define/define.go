@@ -24,7 +24,7 @@ var CodeExpire = 300
 // cosSecretKey 腾讯云对象存储
 var CosSecretKey = os.Getenv("cosSecretKey")
 var CosSecretID = os.Getenv("cosSecretId")
-var CosBucket = "https://getcharzp-1256268070.cos.ap-chengdu.myqcloud.com"
+var CosBucket = "https://1-1301230924.cos.ap-chengdu.myqcloud.com"
 
 // PageSize 分页的默认参数
 var PageSize = 20
