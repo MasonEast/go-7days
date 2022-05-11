@@ -4,6 +4,7 @@ import (
 	"cloud-disk/core/define"
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -36,6 +37,21 @@ func GenerateToken(id int, UserName string, second int) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+// Token 解析
+func AnalyzeToken(token string) (*define.UserClaim, error) {
+	uc := new(define.UserClaim)
+	claims, err := jwt.ParseWithClaims(token, uc, func(token *jwt.Token) (interface{}, error) {
+		return []byte(define.JwtKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !claims.Valid {
+		return uc, errors.New("token is invalid")
+	}
+	return uc, err
 }
 
 func SendEmail(s , code string) error{
