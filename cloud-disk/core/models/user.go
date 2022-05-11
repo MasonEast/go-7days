@@ -4,6 +4,7 @@ import "time"
 
 type User struct {
 	Id        int `xorm:"id"`
+	Identity  string
 	UserName      string `xorm:"username"`
 	Password  string `xorm:"password"`
 	Email     string `xorm:"email"`

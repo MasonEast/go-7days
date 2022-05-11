@@ -45,6 +45,7 @@ func (l *UserRegisterLogic) UserRegister(req *types.UserRegisterRequest) (resp *
 	}
 
 	_, err = l.svcCtx.Engine.Insert(&models.User{
+		Identity: util.UUID(),
 		UserName: req.UserName,
 		Password: util.Md5(req.Password),
 		Email: req.Email,
