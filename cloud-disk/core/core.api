@@ -10,6 +10,10 @@ service core-api {
 	// 验证码发送
 	@handler EmailSend
 	post /email/send(EmailSendRequest) returns (EmailSendReply)
+	
+	// 用户注册
+	@handler UserRegister
+	post /user/register(UserRegisterRequest) returns (UserRegisterReply)
 }
 
 type LoginRequest {
@@ -36,5 +40,17 @@ type EmailSendRequest {
 }
 
 type EmailSendReply {
+	Message string `json:"message"`
+}
+
+type UserRegisterRequest {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	// 验证码
+	Code string `json:"code"`
+}
+
+type UserRegisterReply {
 	Message string `json:"message"`
 }
