@@ -44,7 +44,13 @@ func (l *UserLoginLogic) UserLogin(req *types.LoginRequest) (resp *types.LoginRe
 		return nil, err
 	}
 
+	// 3、生成用于刷新token的token
+	refreshToken, err := util.GenerateToken(user.Id, user.UserName, define.RefreshTokenExpire)
+	if err != nil {
+		return nil, err
+	}
 	resp = new(types.LoginReply)
 	resp.Token = token
+	resp.RefreshToken = refreshToken
 	return
 }
